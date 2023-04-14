@@ -2,19 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ApplicationCreated;
 use App\Models\Application;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 
 class ApplicationController extends Controller
 {
     public function dashboard()
     {
-
-    $application = Application::paginate(10);
+        $application = Application::paginate(10);
     return view('dashboard', compact('application'));
     }
     public function store(Request $request)
     {
+        if ($this->checkDate()){
+        redirect()->back()->with('error', 'you can create only 1 application a day');
+        }
+
         $request->validate([
            'subject' => 'required|max:255',
            'message' => 'required',
@@ -33,7 +40,23 @@ class ApplicationController extends Controller
                 'message' => $request->message,
                 'file_url' => $path,
             ]);
+            $manager = User::first();
+//            Mail::to($manager)->send(new ApplicationCreated($application));
             return redirect()->back();
         }
+    }
+
+    public function checkDate()
+    {
+        if (auth()->user()->applications()->latest()->first() == null){
+            return false;
+        }
+    $last_application = auth()->user()->applications()->latest()->first();
+    $last_app_date = Carbon::parse($last_application->created_at)->format('Y-m-d');
+    $today = Carbon::now()->format('Y-m-d');
+
+    if ($last_app_date === $today){
+        return true;
+    }
     }
 }
