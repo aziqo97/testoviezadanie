@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreApplicationRequest;
 use App\Mail\ApplicationCreated;
 use App\Models\Application;
 use App\Models\User;
@@ -16,17 +17,13 @@ class ApplicationController extends Controller
         $application = Application::paginate(10);
     return view('dashboard', compact('application'));
     }
-    public function store(Request $request)
+    public function store(StoreApplicationRequest $request)
     {
         if ($this->checkDate()){
         redirect()->back()->with('error', 'you can create only 1 application a day');
         }
 
-        $request->validate([
-           'subject' => 'required|max:255',
-           'message' => 'required',
-            'file' => 'file|mimes:jpg,png,pdf|max:300000',
-        ]);
+
         if ($request->hasFile('file')) {
             $name = $request->file('file')->getClientOriginalName();
             $path = $request->file('file')->storeAs(
